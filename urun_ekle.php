@@ -11,12 +11,10 @@ include 'baglan.php';
 
 // Form gönderildi mi kontrol ediyoruz
 if (isset($_POST['urun_kaydet'])) {
-    // Formdan gelen veriler (Sümeyye'nin tablosuna göre birebir eşitlendi)
-    $parfum_adi   = $_POST['parfum_adi'];
-    $marka        = $_POST['marka'];
-    $koku_ailesi  = $_POST['koku_ailesi'];
-    $aciklama     = $_POST['aciklama'];
-    $fiyat        = $_POST['fiyat'];
+    // Formdan gelen veriler (Tablo sütun isimlerine uygun değişkenler)
+    $urun_adi = $_POST['urun_adi'];
+    $urun_fiyat = $_POST['urun_fiyat'];
+    $urun_aciklama = $_POST['urun_aciklama'];
     
     // 3. MEDYA YÖNETİMİ: Resim yükleme
     $gelen_gorsel = $_FILES['gorsel'];
@@ -25,25 +23,27 @@ if (isset($_POST['urun_kaydet'])) {
         $dosya_adi = $gelen_gorsel['name'];
         $gecici_yol = $gelen_gorsel['tmp_name'];
         
-        // Uzantı kontrolü (Güvenlik Challenge'ı)
+        // [CHALLENGE]: Güvenlik kontrolü
         $uzanti = strtolower(pathinfo($dosya_adi, PATHINFO_EXTENSION));
         $izin_verilenler = ['jpg', 'jpeg', 'png'];
         
         if (!in_array($uzanti, $izin_verilenler)) {
             $hata_mesaji = "Geçersiz dosya türü! Sadece JPG, JPEG ve PNG.";
         } else {
-            // Benzersiz isim üretme (Zaman damgası ile çakışma engelleme)
+            // [CHALLENGE]: Benzersiz isim üretme (time fonksiyonu ile)
             $yeni_dosya_adi = time() . "_" . $dosya_adi;
+            
+            // ORTAK KLASÖR YOLUMUZ: Gerçek yer olan images/urunler yapıldı!
             $hedef_yol = "images/urunler/" . $yeni_dosya_adi;
             
             if (move_uploaded_file($gecici_yol, $hedef_yol)) {
                 
-                // 4. VERİTABANINA YAZMA: Sümeyye'nin 'parfumler' tablosuna göre INSERT sorgusu
-                $sorgu = $db->prepare("INSERT INTO parfumler (parfum_adi, marka, koku_ailesi, aciklama, fiyat, resim) VALUES (?, ?, ?, ?, ?, ?)");
-                $ekle = $sorgu->execute([$parfum_adi, $marka, $koku_ailesi, $aciklama, $fiyat, $yeni_dosya_adi]);
+                // 4. VERİTABANINA YAZMA: Sütun isimleri Betül'ün veritabanıyla tam eşleşti!
+                $sorgu = $db->prepare("INSERT INTO urunler (urun_adi, urun_fiyat, urun_aciklama, urun_gorsel) VALUES (?, ?, ?, ?)");
+                $ekle = $sorgu->execute([$urun_adi, $urun_fiyat, $urun_aciklama, $yeni_dosya_adi]);
                 
                 if ($ekle) {
-                    $basari_mesaji = "Yeni Parfüm Başarıyla Üretim Bandına Eklendi! 🎉";
+                    $basari_mesaji = "Ürün ve Görsel Başarıyla Eklendi! 🎉";
                 } else {
                     $hata_mesaji = "Veritabanına kaydedilirken bir SQL hatası oluştu.";
                 }
@@ -68,11 +68,10 @@ if (isset($_POST['urun_kaydet'])) {
 
 <div class="container bg-white p-5 shadow rounded" style="max-width: 600px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold">🛠️ Üretim Bandı (Ürün Ekle)</h3>
+        <h3 class="fw-bold">🛠️ Üretim Bandı</h3>
         <a href="admin.php" class="btn btn-sm btn-secondary">Panele Dön</a>
     </div>
 
-    <!-- Bildirim Mesajları -->
     <?php if(isset($basari_mesaji)): ?>
         <div class="alert alert-success"><?php echo $basari_mesaji; ?></div>
     <?php endif; ?>
@@ -84,27 +83,17 @@ if (isset($_POST['urun_kaydet'])) {
         
         <div class="mb-3">
             <label class="form-label fw-semibold">Parfüm Adı</label>
-            <input type="text" name="parfum_adi" class="form-control" placeholder="Örn: Aurens Gold" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Marka</label>
-            <input type="text" name="marka" class="form-control" placeholder="Örn: Aurens" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Koku Ailesi</label>
-            <input type="text" name="koku_ailesi" class="form-control" placeholder="Örn: Odunsu, Oryantal, Çiçeksi" required>
+            <input type="text" name="urun_adi" class="form-control" placeholder="Örn: Aurens Gold" required>
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold">Fiyat (TL)</label>
-            <input type="number" step="0.01" name="fiyat" class="form-control" placeholder="Örn: 450.00" required>
+            <input type="number" step="0.01" name="urun_fiyat" class="form-control" placeholder="Örn: 450.00" required>
         </div>
 
         <div class="mb-3">
-            <label class="form-label fw-semibold">Açıklama / Notalar</label>
-            <textarea name="aciklama" class="form-control" rows="3" placeholder="Parfümün bıraktığı iz, üst-orta-alt notaları..." required></textarea>
+            <label class="form-label fw-semibold">Açıklama</label>
+            <textarea name="urun_aciklama" class="form-control" rows="3" placeholder="Parfüm notalarını yazın..." required></textarea>
         </div>
 
         <div class="mb-3">

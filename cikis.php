@@ -1,5 +1,6 @@
 <?php
 session_start();
-session_destroy(); // Bilgisayardaki giriş biletini yırtıp atar
-header("Location: login.php"); // Giriş ekranına geri yönlendirir
+session_destroy(); // Verilen giriş kartını imha et (Tüm oturumu sil)
+header("Location: login.php"); // Giriş sayfasına geri dön
 exit;
+?>

@@ -1,40 +1,30 @@
-<?php 
-// 1. GÖREV MADDESİ: Güvenlik görevlisini (Session) en üstte uyandırıyoruz!
-session_start(); 
+<?php
+// 1. ADIM: Güvenlik görevlisini uyandır (Session başlat)
+// Bu kod en üstte olmalı, üzerinde boşluk bile olmamalı.
+session_start();
 
-// Geçen hafta oluşturduğumuz veritabanı köprüsünü (baglan.php) sayfaya dahil ediyoruz
-include 'baglan.php'; 
+// 2. ADIM: Veritabanı bağlantı dosyasını çekiyoruz
+include 'baglan.php';
 
-// Eğer kullanıcı giriş butonuna bastıysa (Form POST edildiyse) bu blok çalışacak
+// 3. ADIM: Giriş butonuna basıldı mı kontrol ediyoruz
 if (isset($_POST['giris_yap'])) {
-    
-    // 2. GÖREV MADDESİ: Formdan gelen verileri POST yöntemiyle yakalıyoruz
-    $gelen_kullanici = $_POST['kullanici_adi'];
-    $gelen_sifre = $_POST['sifre'];
+    $kadi  = $_POST['kullanici_adi'];
+    $sifre = $_POST['sifre'];
 
-    // 3. GÖREV MADDESİ: PDO kullanarak veritabanına soruyoruz
-    // SQL Injection saldırılarından korunmak için güvenli "prepare" yöntemini kullanıyoruz
-    $sorgu = $db->prepare("SELECT * FROM yoneticiler WHERE kullanici_adi = :kadi AND sifre = :sifre");
-    $sorgu->execute([
-        'kadi' => $gelen_kullanici,
-        'sifre' => $gelen_sifre
-    ]);
-    
-    // Veritabanında eşleşen satır var mı diye bakıyoruz
-    $yonetici = $sorgu->fetch(PDO::FETCH_ASSOC);
+    // Veritabanına soruyoruz: "Bu kullanıcı adı ve şifreye sahip biri var mı?"
+    $sorgu = $db->prepare("SELECT * FROM yoneticiler WHERE kullanici_adi = ? AND sifre = ?");
+    $sorgu->execute([$kadi, $sifre]);
+    $kullanici = $sorgu->fetch();
 
-    if ($yonetici) {
-        // 4. GÖREV MADDESİ: VIP Biletini Kesiyoruz! 
-        // Eşleşme varsa session biletini tanımlıyoruz
+    if ($kullanici) {
+        // VIP biletini veriyoruz
         $_SESSION['admin_giris'] = true;
-        $_SESSION['admin_kullanici'] = $yonetici['kullanici_adi']; // İleride hoş geldin demek için adını da saklayalım
-
-        // Kullanıcıyı kolundan tutup VIP odaya (Admin Paneline) yönlendiriyoruz
+        // Admin paneline (admin.php) yönlendiriyoruz
         header("Location: admin.php");
-        exit; // Yönlendirmeden sonra kodların çalışmasını durduruyoruz
+        exit;
     } else {
-        // Eşleşme yoksa ekranda görünecek hata mesajı değişkeni
-        $hata_mesaji = "Hatalı Kullanıcı Adı veya Şifre!";
+        // Bilgiler yanlışsa ekranda hata göstermek için değişken oluşturuyoruz
+        $hata_mesaji = "Kullanıcı adı veya şifre hatalı!";
     }
 }
 ?>
@@ -71,13 +61,11 @@ if (isset($_POST['giris_yap'])) {
         <p class="text-muted">Commit Lab Yönetim Paneli Girişi</p>
     </div>
 
-    <?php if (isset($hata_mesaji)): ?>
-        <div class="alert alert-danger text-center" role="alert">
-            <?php echo $hata_mesaji; ?>
-        </div>
+    <?php if(isset($hata_mesaji)): ?>
+        <div class="alert alert-danger text-center"><?php echo $hata_mesaji; ?></div>
     <?php endif; ?>
 
-    <form action="" method="POST">
+    <form action="login.php" method="POST">
         
         <div class="mb-3">
             <label for="kullanici_adi" class="form-label">Kullanıcı Adı</label>
